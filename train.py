@@ -109,7 +109,7 @@ class TrainHandler:
             wandb.log({'transforms': f.read()})
 
         return train_transforms, val_transforms
-
+         
     @staticmethod
     def __get_batch_size(args) -> Tuple[int, int]:
         # Detect GPU and VRAM
@@ -161,6 +161,7 @@ class TrainHandler:
 
     @staticmethod
     def __prepare_class_mapping(args):
+        print(f"DEBUG: dataset_csv_path={args.dataset_csv_path}, class_mapping_filename={args.class_mapping_filename}")
         return load_class_mapping(os.path.join(args.dataset_csv_path, args.class_mapping_filename))
 
     def __prepare_trainer(self, args) -> Trainer:
@@ -269,7 +270,7 @@ def arg_parser():
                         help="Directory to load pretrained checkpoints from")
 
     parser.add_argument("--dataset_path", default="../data/", type=str)
-    parser.add_argument("--dataset_csv_path", type=str)
+    parser.add_argument("--dataset_csv_path", type=str, required=True, help="Path to dataset CSV")
     parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
     parser.add_argument("--transform_path", default="configs/transforms/alpha_transforms.py", type=str)
 

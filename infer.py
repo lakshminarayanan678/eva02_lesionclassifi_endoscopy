@@ -79,6 +79,7 @@ def load_data(dataset_csv_path, dataset_path, dataset_type='test'):
     elif dataset_type == 'train':
         df = df[df['fold'] > 0]
 
+    df['frame_path'] = df['frame_path'].str.replace("\\", "/", regex=False)
     df['frame_path'] = df['frame_path'].apply(lambda x: os.path.join(dataset_path, x))
     return df
 
@@ -100,7 +101,7 @@ def get_image_batch(dataset, start_idx, batch_size):
 
 
 def main(args):
-    config_args = {}
+    config_args = {} 
 
     # Load config file parameters if provided
     if args.config:
