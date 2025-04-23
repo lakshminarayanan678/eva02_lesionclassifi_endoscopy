@@ -7,9 +7,9 @@ wandb_project: capsule_vision_challenge_2024
 entity: lakshminarayanan-
 
 # === Dataset Paths ===
-dataset_path: "/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/data"
+# dataset_path: "/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/data"
 # dataset_csv_path: "/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/codes/capsule_vision_challenge_2024/datasets/ce24"
-dataset_csv_path: "/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/data/capsulevision"
+dataset_csv_path: "/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/data1/capsulevision"
 
 # === Checkpoints ===
 checkpoint_dir: "checkpoints/"
