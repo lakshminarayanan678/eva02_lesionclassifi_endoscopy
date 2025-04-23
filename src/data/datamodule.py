@@ -35,8 +35,6 @@ class DataModule(LightningDataModule):
 
     def __get_csv_filepaths(self):
         file_paths = {
-            'train.csv': os.path.join(self.dataset_csv_path, 'train.csv'),
-            'val.csv': os.path.join(self.dataset_csv_path, 'val.csv'),
             'train_val.csv': os.path.join(self.dataset_csv_path, 'train_val.csv'),
             'test.csv': os.path.join(self.dataset_csv_path, 'test.csv')
         }
@@ -44,9 +42,8 @@ class DataModule(LightningDataModule):
         existing_files = [file for file, path in file_paths.items() if os.path.exists(path)]
 
         supported_file_combinations = [
-            ['train.csv'],
-            ['train.csv', 'val.csv'],
-            ['train_val.csv'],
+            ['test.csv'],
+            ['train_val.csv']
         ]
 
         valid_combinations = supported_file_combinations + [combo + ['test.csv'] for combo in

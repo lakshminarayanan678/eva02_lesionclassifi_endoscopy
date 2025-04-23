@@ -237,7 +237,8 @@ def main(args):
         config=args,
         entity=args.entity,
         project=args.wandb_project,
-        reinit=True
+        reinit=True,
+        job_type="train"
     )
 
     args = argparse.Namespace(**wandb.config)
@@ -247,8 +248,19 @@ def main(args):
         level=logging.INFO
     )
 
+    # Download dataset from W&B Artifact
+    dataset_artifact = wandb.use_artifact("comb_mln2:latest")
+    downloaded_dataset_path = dataset_artifact.download()
+    args.dataset_path = downloaded_dataset_path
+
     trainer = TrainHandler(args)
     trainer.train()
+
+    # Log best model as artifact
+    artifact = wandb.Artifact("eva02_ulcers_erosions", type="model")
+    best_model_path = trainer.trainer.checkpoint_callback.best_model_path
+    artifact.add_file(best_model_path)
+    wandb.log_artifact(artifact)
 
     wandb.finish()
 
@@ -271,7 +283,7 @@ def arg_parser():
 
     parser.add_argument("--dataset_path", default="../data/", type=str)
     parser.add_argument("--dataset_csv_path", type=str, required=True, help="Path to dataset CSV")
-    parser.add_argument("--class_mapping_filename", default="class_mapping.json", type=str)
+    parser.add_argument("--class_mapping_filename", default="/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/data1/capsulevision/class_mapping1.json", type=str)
     parser.add_argument("--transform_path", default="configs/transforms/alpha_transforms.py", type=str)
 
     # === Training ===
