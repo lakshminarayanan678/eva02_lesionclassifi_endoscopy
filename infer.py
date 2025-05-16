@@ -11,6 +11,9 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
+import matplotlib.pyplot as plt
+import seaborn as sns
+from collections import Counter
 
 from src.data.dataset import ImageDataset
 from src.models.timm.timm_model import TimmModel
@@ -23,8 +26,7 @@ warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash a
 
 def save_predictions_to_excel(image_paths, y_pred, output_path, dataset_type):
     logging.info(f"Saving predictions.xlsx to {output_path}")
-    class_columns = ['Angioectasia', 'Bleeding', 'Erosion', 'Erythema', 'Foreign Body', 'Lymphangiectasia', 'Normal',
-                     'Polyp', 'Ulcer', 'Worms']
+    class_columns = ['erosion', 'normal', 'ulcers']
 
     y_pred_classes = np.argmax(y_pred, axis=1)
 
@@ -56,6 +58,7 @@ def prepare_model(ckpt_path, config, class_to_idx):
     if not ckpt_path:
         raise ValueError("Checkpoint path not provided")
     logging.info(f"Loading model from checkpoint: {ckpt_path}")
+
     model = TimmModel.load_from_checkpoint(
         checkpoint_path=ckpt_path,
         config=config,
@@ -65,6 +68,16 @@ def prepare_model(ckpt_path, config, class_to_idx):
         raise ValueError("Failed to load model from checkpoint")
     model.eval()
     return model
+
+    # model = TimmModel(config=config, class_to_idx=class_to_idx)
+    # state_dict = torch.load(ckpt_path, map_location='cpu')["state_dict"]
+        # # Remove classifier layer weights (they mismatch)
+    # state_dict = {k: v for k, v in state_dict.items() if "classifier.linear" not in k}
+    # # Load only matching layers
+    # missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    # print("Missing keys:", missing)
+    # print("Unexpected keys:", unexpected)
+    # model.eval()
 
 
 def load_data(dataset_csv_path, dataset_path, dataset_type='test'):
@@ -120,9 +133,9 @@ def main(args):
     config.ft_mode = None
     dataset_type = getattr(config, "dataset_type", "test")
 
-    class_mapping = load_class_mapping(os.path.join(config.dataset_csv_path, 'class_mapping.json'))
+    class_mapping = load_class_mapping("/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/data1/capsulevision/class_mapping1.json")
 
-    _, val_transforms = load_transforms(img_size=config.img_size, transform_path=config.transform_path)
+    _, val_transforms = load_transforms(img_size=config.img_size, transform_path="/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/codes/capsule_vision_challenge_2024/configs/transforms/base_transforms.py")
 
     df = load_data(config.dataset_csv_path, config.dataset_path, dataset_type)
 
@@ -173,12 +186,46 @@ def main(args):
         preds.append(batch_preds)
 
     preds = np.vstack(preds)
-    preds = preds.reshape(-1, 10)
+    preds = preds.reshape(-1, 3)
+    # Get predicted class indices and confidence scores
+    pred_classes = np.argmax(preds, axis=1)
+    confidences = np.max(preds, axis=1)
+
+    # Class distribution bar plot
+    class_counts = Counter(pred_classes)
+    class_names = list(class_mapping.keys())
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=class_names, y=[class_counts.get(i, 0) for i in range(len(class_names))])
+    plt.title("Prediction Count per Class")
+    plt.ylabel("Number of Images")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(f"{config.save_dir}/predicted_class_distribution_{dataset_type}.png")
+    plt.close()
+
+    # Confidence histogram
+    plt.figure(figsize=(8, 5))
+    plt.hist(confidences, bins=20, color='skyblue', edgecolor='black')
+    plt.title("Prediction Confidence Histogram")
+    plt.xlabel("Top-1 Confidence Score")
+    plt.ylabel("Number of Images")
+    plt.tight_layout()
+    plt.savefig(f"{config.save_dir}/prediction_confidence_histogram_{dataset_type}.png")
+    plt.close()
+
+    # Save least confident predictions to Excel
+    df_confidence = pd.DataFrame({
+        'image_path': img_paths,
+        'predicted_class': [class_names[i] for i in pred_classes],
+        'confidence': confidences
+    })
+    df_confidence = df_confidence.sort_values(by='confidence').reset_index(drop=True)
+    df_confidence.to_excel(f"{config.save_dir}/least_confident_predictions_{dataset_type}.xlsx", index=False)
 
     os.makedirs('submission', exist_ok=True)
 
     os.makedirs(config.save_dir, exist_ok=True)
-    output_path = f'{config.save_dir}/WueVision_predicted_{dataset_type}_dataset.xlsx'
+    output_path = f'{config.save_dir}/comb_mln2_{dataset_type}_dataset.xlsx'
 
     save_predictions_to_excel(image_paths=img_paths, y_pred=preds, output_path=output_path, dataset_type=dataset_type)
 

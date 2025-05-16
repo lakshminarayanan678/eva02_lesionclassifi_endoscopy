@@ -211,7 +211,7 @@ class TrainHandler:
 
 def main(args):
     config_args = {}
-    local_conf_path = "configs/local.yaml"
+    local_conf_path = "/home/endodl/PHASE-1/mln/lesions_cv24/MAIN/codes/capsule_vision_challenge_2024/configs/submission/data.yaml"
 
     # Read arguments from passed config
     if args.config:
@@ -250,8 +250,8 @@ def main(args):
 
     # Download dataset from W&B Artifact
     dataset_artifact = wandb.use_artifact("comb_mln2:latest")
-    downloaded_dataset_path = dataset_artifact.download()
-    args.dataset_path = downloaded_dataset_path
+    # downloaded_dataset_path = dataset_artifact.download()
+    # args.dataset_path = downloaded_dataset_path
 
     trainer = TrainHandler(args)
     trainer.train()
@@ -289,7 +289,7 @@ def arg_parser():
     # === Training ===
     parser.add_argument("--seed", default=42, type=int)
     parser.add_argument("--fold_id", default=1, type=int)
-    parser.add_argument("--max_epochs", default=100, type=int)
+    parser.add_argument("--max_epochs", default=50, type=int)
     parser.add_argument("--train_bs", default=64, type=int)
     parser.add_argument("--val_bs", default=64, type=int)
     parser.add_argument("--num_workers", default=16, type=int)
