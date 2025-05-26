@@ -19,6 +19,7 @@ from src.data.dataset import ImageDataset
 from src.models.timm.timm_model import TimmModel
 from src.utils.class_mapping import load_class_mapping
 from src.utils.transform_utils import load_transforms
+import time
 
 warnings.filterwarnings("ignore", ".*A new version of Albumentations is*")
 warnings.filterwarnings("ignore", message=".*Torch was not compiled with flash attention.*")
@@ -170,9 +171,10 @@ def main(args):
     logging.info(f"Predicting on {len(dataset)} images in {num_batches} batches")
 
     preds = []
+    total_inference_time = 0.0
+    num_images_processed = 0
     for batch_num in tqdm(range(1, num_batches + 1), desc="Processing Batches", unit="batch"):
         current_start_idx = (batch_num - 1) * batch_size
-
         images = get_image_batch(dataset, start_idx=current_start_idx, batch_size=batch_size)
 
         if torch.cuda.is_available():
@@ -180,11 +182,22 @@ def main(args):
 
         # Forward pass
         with torch.no_grad():
+            start_time = time.time()
             logits = model.forward(images)
+            torch.cuda.synchronize()
+            end_time = time.time()
+            
+        batch_inference_time = end_time - start_time
+        total_inference_time += batch_inference_time
+        num_images_processed += images.size(0)
 
         batch_preds = torch.softmax(logits, dim=1).detach().cpu().numpy()
         preds.append(batch_preds)
 
+    avg_time_per_image = total_inference_time / num_images_processed
+    logging.info(f"Total inference time: {total_inference_time:.2f} seconds for {num_images_processed} images")
+    logging.info(f"Average inference time per image: {avg_time_per_image * 1000:.2f} ms")
+    
     preds = np.vstack(preds)
     preds = preds.reshape(-1, 3)
     # Get predicted class indices and confidence scores
