@@ -1,0 +1,10 @@
+dataset,erosion,normal,ulcers,Total Images
+AIIMS,0,0,66,66
+AIIMS_v,0,0,29,29
+gastrovision,0,2576,6,2582
+hyperkvasir,0,0,851,851
+kid,0,315,0,315
+kid_v,0,136,0,136
+kvasir-capsule,506,34338,854,35698
+seeai,4390,6160,0,10550
+Total Images,4896,43525,1806,50227
